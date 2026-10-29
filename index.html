@@ -1,0 +1,440 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<meta name="color-scheme" content="light">
+<title>Аудит присутствия</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Manrope:wght@600;700;800&display=swap" rel="stylesheet">
+<!-- Яндекс Метрика: вставить счётчик сюда. Цели: scroll_end, cta_click -->
+<style>
+  :root {
+    --ink: #0b1038;
+    --muted: #6f6c90;
+    --line: #eff0f6;
+    --lav: #eef0ff;
+    --blue: #2b44d4;
+    --ok: #17a05d;      --ok-soft: #e3f6ec;
+    --warn: #c97d0d;    --warn-soft: #fcf1dc;
+    --bad: #e04b3c;     --bad-soft: #fde7e4;
+    --shadow: 0 2px 12px rgba(20, 20, 43, .08);
+    --shadow-lg: 0 12px 40px rgba(20, 20, 43, .10);
+    --head: Manrope, Inter, system-ui, sans-serif;
+    --body: Inter, system-ui, -apple-system, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body { margin: 0; background: #fff; color: var(--ink); font: 400 16px/1.55 var(--body); -webkit-font-smoothing: antialiased; }
+  p { margin: 0; }
+  .wrap { max-width: 1120px; margin: 0 auto; padding: 0 16px; }
+
+  /* Типографика: H1 крупный и контрастный, H2 заметно меньше, служебное 14px */
+  h1, h2, h3 { font-family: var(--head); margin: 0; color: var(--ink); }
+  h1 { font-size: clamp(42px, 7vw, 80px); line-height: .98; font-weight: 800; letter-spacing: -.045em; }
+  h2 { font-size: clamp(30px, 4.2vw, 46px); line-height: 1.08; font-weight: 800; letter-spacing: -.04em; }
+  h3 { font-size: 20px; line-height: 1.25; font-weight: 700; letter-spacing: -.02em; }
+  .lead { font-size: 18px; line-height: 1.55; color: #2c3160; max-width: 480px; }
+  .small { font-size: 14px; line-height: 1.45; }
+  .muted { color: var(--muted); }
+
+  .tag { display: inline-flex; align-items: center; height: 29px; padding: 0 14px; border: 1px solid var(--line); border-radius: 999px; background: rgba(255,255,255,.7); backdrop-filter: blur(6px); font: 500 14px/1 var(--body); color: var(--ink); }
+  .btn { display: inline-flex; align-items: center; justify-content: center; height: 44px; padding: 0 22px; border-radius: 10px; border: 0; background: #000; color: #fff; font: 500 15px/1 var(--body); text-decoration: none; cursor: pointer; transition: transform .15s, box-shadow .15s; }
+  .btn:hover { transform: translateY(-1px); box-shadow: 0 6px 18px rgba(0,0,0,.25); }
+  .btn.white { background: #fff; color: #000; }
+  .btn.block { width: 100%; }
+  .link { display: inline-flex; align-items: center; gap: 6px; height: 44px; font: 500 15px/1 var(--body); color: var(--ink); text-decoration: none; }
+  .link::after { content: "→"; transition: transform .15s; }
+  .link:hover::after { transform: translateX(3px); }
+
+  /* Верхняя полоса */
+  .top { position: absolute; inset: 0 0 auto 0; z-index: 3; }
+  .hero .top .wrap { display: flex; grid-template-columns: none; justify-content: space-between; align-items: center; height: 76px; }
+  .brand { font: 800 20px/1 var(--head); letter-spacing: -.03em; }
+  .brand b { color: var(--blue); }
+
+  /* Первый экран */
+  .hero { position: relative; overflow: hidden; padding: 148px 0 96px; background: linear-gradient(180deg, #eef0ff 0%, #e6e9ff 38%, #b4c0f4 72%, #3550d6 100%); }
+  .hero .wrap { display: grid; grid-template-columns: 1.1fr .9fr; gap: 24px; align-items: center; }
+  .hero-copy { position: relative; z-index: 2; display: grid; gap: 24px; justify-items: start; }
+  .hero-copy .btns { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+  .bench { display: flex; gap: 8px; flex-wrap: wrap; }
+  .bench .tag b { font-weight: 600; }
+  .obj { position: relative; width: min(100%, 420px); aspect-ratio: 1; justify-self: center; }
+  .obj > svg { width: 100%; height: 100%; display: block; }
+  .obj .num { position: absolute; inset: 0; display: grid; place-content: center; text-align: center; }
+  .obj .num b { font: 800 clamp(64px, 9vw, 96px)/.9 var(--head); letter-spacing: -.05em; }
+  .obj .num span { font-size: 14px; color: var(--muted); margin-top: 6px; }
+  .float { position: absolute; animation: bob 7s ease-in-out infinite; }
+  @keyframes bob { 0%, 100% { transform: translateY(0) rotate(0); } 50% { transform: translateY(-12px) rotate(4deg); } }
+  @media (prefers-reduced-motion: reduce) { .float { animation: none; } html { scroll-behavior: auto; } }
+
+  section.block { padding: 120px 0 0; }
+  .head { display: grid; gap: 16px; justify-items: center; text-align: center; max-width: 620px; margin: 0 auto 56px; }
+  .head p { font-size: 18px; color: #2c3160; }
+
+  .card { background: #fff; border: 1px solid var(--line); border-radius: 24px; box-shadow: var(--shadow); padding: 32px; }
+
+  /* Проблемы */
+  .problems { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
+  .problem { display: grid; gap: 14px; align-content: start; }
+  .problem .n { width: 44px; height: 44px; border-radius: 14px; display: grid; place-content: center; font: 800 20px/1 var(--head); color: #fff; background: linear-gradient(135deg, #1a2bc0, #4c6bff 55%, #2cd4f0); box-shadow: 0 6px 16px rgba(43, 68, 212, .35); }
+  .problem p { color: var(--muted); }
+  .problem .impact { font-size: 14px; font-weight: 600; color: var(--bad); padding-top: 14px; border-top: 1px solid var(--line); }
+
+  /* Площадки */
+  .blocks { display: grid; grid-template-columns: repeat(2, 1fr); gap: 24px; }
+  .bh { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; margin-bottom: 14px; }
+  .bh b { font: 700 15px/1 var(--body); color: var(--muted); }
+  .bar { height: 8px; border-radius: 99px; background: var(--line); overflow: hidden; margin-bottom: 22px; }
+  .bar i { display: block; height: 100%; border-radius: inherit; }
+  .items { list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; }
+  .items li { display: grid; grid-template-columns: 22px 1fr; gap: 12px; font-size: 15px; }
+  .items small { display: block; color: var(--muted); font-size: 14px; }
+  .dot { width: 22px; height: 22px; border-radius: 50%; display: grid; place-content: center; font-size: 12px; font-weight: 800; margin-top: 1px; }
+  .dot.ok { background: var(--ok-soft); color: var(--ok); }
+  .dot.warn { background: var(--warn-soft); color: var(--warn); }
+  .dot.bad { background: var(--bad-soft); color: var(--bad); }
+
+  /* Таблица */
+  .table-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; padding: 8px; }
+  table { width: 100%; border-collapse: collapse; min-width: 600px; font-size: 15px; }
+  th, td { padding: 16px; text-align: left; border-bottom: 1px solid var(--line); white-space: nowrap; }
+  th { font: 500 14px/1 var(--body); color: var(--muted); }
+  tr:last-child td { border-bottom: 0; }
+  tr.me td { background: var(--lav); font-weight: 700; }
+  tr.me td:first-child { border-radius: 12px 0 0 12px; }
+  tr.me td:last-child { border-radius: 0 12px 12px 0; }
+  td.n { font-variant-numeric: tabular-nums; }
+
+  /* Быстрые победы */
+  .wins { display: grid; grid-template-columns: repeat(2, 1fr); gap: 24px; }
+  .win { display: grid; gap: 10px; align-content: start; }
+  .win p { color: var(--muted); }
+  .days { justify-self: start; font-size: 14px; font-weight: 600; color: var(--ok); background: var(--ok-soft); padding: 6px 12px; border-radius: 99px; }
+
+  /* Пакеты */
+  .plans { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; align-items: end; }
+  .plan { border-radius: 24px; padding: 40px; display: grid; gap: 28px; align-content: start; background: #fff; border: 1px solid var(--line); box-shadow: var(--shadow); }
+  .plan .row { display: flex; justify-content: space-between; align-items: center; min-height: 31px; }
+  .plan .name { font: 600 16px/1 var(--body); color: var(--muted); }
+  .plan .price { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+  .plan .price b { font: 800 44px/1 var(--head); letter-spacing: -.04em; }
+  .plan .price span { font: 500 16px/1 var(--body); color: var(--muted); }
+  .plan .setup { margin-top: 10px; font-size: 14px; color: var(--muted); }
+  .plan ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 16px; }
+  .plan li { display: grid; grid-template-columns: 24px 1fr; gap: 14px; font-size: 15px; align-items: start; }
+  .plan li svg { width: 24px; height: 24px; }
+  .plan.hot { background: #09090e; border-color: #09090e; color: #fff; box-shadow: var(--shadow-lg); }
+  .plan.hot .name, .plan.hot .price span, .plan.hot .setup { color: #a6a6b8; }
+  .plan.hot .price b { color: #fff; }
+  .rainbow { display: inline-flex; align-items: center; height: 31px; padding: 0 12px; border: 1px solid #2a2a38; border-radius: 8px; font: 500 14px/1 var(--body); background-image: linear-gradient(90deg, #ff7ad9, #7aa0ff, #4de1ff, #9dffb4); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .starter { text-align: center; margin-top: 32px; color: var(--muted); font-size: 15px; }
+  .starter b { color: var(--ink); }
+
+  /* Финальный призыв */
+  .cta { position: relative; overflow: hidden; margin-top: 120px; padding: 132px 0; background: linear-gradient(180deg, #fff 0%, #eef1ff 55%, #d3dbff 100%); text-align: center; }
+  .cta .wrap { position: relative; z-index: 2; display: grid; gap: 20px; justify-items: center; }
+  .cta .copy { max-width: 540px; font-size: 18px; color: #2c3160; }
+  .cta .price-note { font-weight: 600; color: var(--ink); }
+  .cta .btns { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; align-items: center; margin-top: 12px; }
+  .cta .who { display: flex; align-items: center; gap: 12px; margin-top: 20px; font-size: 14px; text-align: left; color: var(--muted); }
+  .cta .who b { color: var(--ink); }
+  .cta .who img { width: 44px; height: 44px; border-radius: 50%; object-fit: cover; }
+  .cta .s1 { left: -60px; top: 36px; width: 330px; }
+  .cta .s2 { right: -30px; bottom: 20px; width: 280px; }
+
+  footer { padding: 28px 0 40px; font-size: 14px; color: var(--muted); }
+  footer .wrap { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+
+  @media (max-width: 900px) {
+    .hero { padding: 112px 0 64px; }
+    .hero .wrap { grid-template-columns: 1fr; }
+    .obj { width: min(78%, 320px); margin-top: 12px; }
+    .problems, .plans { grid-template-columns: 1fr; }
+    .plans { align-items: stretch; }
+    .plan { padding: 32px; }
+    .cta .s1 { width: 220px; left: -90px; top: 20px; }
+    .cta .s2 { width: 200px; right: -70px; bottom: 10px; }
+  }
+  @media (max-width: 640px) {
+    section.block { padding-top: 88px; }
+    .head { margin-bottom: 36px; }
+    .blocks, .wins { grid-template-columns: 1fr; }
+    .card { padding: 24px; }
+    .cta { padding: 168px 0 160px; margin-top: 88px; }
+    .cta .s1 { width: 170px; left: -40px; top: -6px; }
+    .cta .s2 { width: 150px; right: -26px; bottom: -6px; }
+    .hero .top .wrap .tag { display: none; }
+  }
+</style>
+</head>
+<body>
+<div id="app"></div>
+
+<!-- Агент меняет только этот JSON. Структура описана в SKILL.md -->
+<script id="audit-data" type="application/json">
+{
+  "meta": {
+    "company": "Автосервис «Мотор Плюс»",
+    "segment": "автосервис",
+    "city": "Казань",
+    "date": "28 октября 2026",
+    "intro": "Мы посмотрели, как вас видят клиенты до звонка: карты, сайт и соседей по району. Ниже то, что можно исправить быстро и что заметно влияет на количество звонков.",
+    "author": {
+      "name": "Имя Фамилия",
+      "role": "IN+PACK, дизайн и упаковка бизнеса",
+      "photo": "",
+      "telegram": "https://t.me/username",
+      "phone": "+7 900 000-00-00",
+      "email": "hello@inpack.ru"
+    }
+  },
+  "score": { "total": 54, "competitorsMin": 71, "competitorsMax": 82 },
+  "problems": [
+    {
+      "title": "17 отзывов без ответа на Яндекс Картах",
+      "detail": "Последний ответ был в марте. Среди неотвеченных есть 4 негативных: их видят все, кто выбирает сервис.",
+      "impact": "Рейтинг 4,2 против 4,7–4,9 у соседей"
+    },
+    {
+      "title": "4 фото на картах, у ближайшего конкурента 120",
+      "detail": "Нет фото зоны ожидания, боксов и мастеров. Карточка выглядит заброшенной даже при хорошем сервисе.",
+      "impact": "Карточку с фото открывают и сохраняют чаще"
+    },
+    {
+      "title": "На сайте нет цен и быстрой связи",
+      "detail": "Первый экран рассказывает о компании, а не о том, сколько стоит услуга. Кнопки WhatsApp или Telegram нет, форма на телефоне уходит за третий экран.",
+      "impact": "Часть посетителей уходит к тем, у кого цена видна сразу"
+    }
+  ],
+  "blocks": [
+    {
+      "name": "Яндекс Карты", "score": 11, "max": 30,
+      "items": [
+        { "status": "warn", "label": "Рейтинг 4,2", "note": "у соседей 4,7–4,9" },
+        { "status": "bad", "label": "17 отзывов без ответа", "note": "4 из них негативные" },
+        { "status": "bad", "label": "4 фото", "note": "рекомендуем от 30" },
+        { "status": "ok", "label": "Часы работы и телефон актуальны" }
+      ]
+    },
+    {
+      "name": "2ГИС", "score": 14, "max": 25,
+      "items": [
+        { "status": "ok", "label": "Рейтинг 4,6" },
+        { "status": "warn", "label": "Нет прайса в карточке", "note": "у 2 из 3 конкурентов есть" },
+        { "status": "warn", "label": "6 отзывов без ответа" }
+      ]
+    },
+    {
+      "name": "Сайт", "score": 17, "max": 30,
+      "items": [
+        { "status": "bad", "label": "Нет цен на первом экране" },
+        { "status": "bad", "label": "Нет кнопки мессенджера" },
+        { "status": "warn", "label": "Медленно грузится на телефоне", "note": "около 6 секунд" },
+        { "status": "ok", "label": "Понятный адрес и схема проезда" }
+      ]
+    },
+    {
+      "name": "Соцсети и Авито", "score": 12, "max": 15,
+      "items": [
+        { "status": "ok", "label": "Группа VK обновляется" },
+        { "status": "warn", "label": "Нет объявлений на Авито", "note": "у 2 конкурентов есть" }
+      ]
+    }
+  ],
+  "competitors": [
+    { "name": "Автосервис «Мотор Плюс»", "me": true, "rating": "4,2", "reviews": 86, "unanswered": 17, "photos": 4, "prices": "нет" },
+    { "name": "Конкурент 1", "rating": "4,9", "reviews": 312, "unanswered": 0, "photos": 120, "prices": "есть" },
+    { "name": "Конкурент 2", "rating": "4,7", "reviews": 154, "unanswered": 2, "photos": 48, "prices": "есть" },
+    { "name": "Конкурент 3", "rating": "4,8", "reviews": 201, "unanswered": 5, "photos": 35, "prices": "нет" }
+  ],
+  "quickWins": [
+    { "title": "Ответить на все отзывы", "detail": "Сначала на негатив: спокойно, по делу, с предложением решения.", "days": "2 дня" },
+    { "title": "Загрузить 30–40 фото", "detail": "Фасад, боксы, зона ожидания, мастера, работы до и после.", "days": "1 неделя" },
+    { "title": "Добавить прайс на карты и сайт", "detail": "5–10 ходовых услуг с ценой «от».", "days": "3 дня" },
+    { "title": "Кнопка Telegram и WhatsApp на сайте", "detail": "Видна на первом экране телефона.", "days": "1 день" }
+  ],
+  "packages": [
+    {
+      "name": "Видно", "monthly": "7 000", "setup": "25 000",
+      "features": [
+        "Мини-стиль: цвета, шрифты, шаблоны",
+        "Яндекс Карты и 2ГИС: описание, цены, 30+ фото",
+        "VK и Telegram: оформление и шаблоны постов",
+        "Ответы на отзывы за 24 часа",
+        "Отчёт раз в месяц"
+      ]
+    },
+    {
+      "name": "Выбирают", "monthly": "12 000", "setup": "80 000", "popular": true,
+      "features": [
+        "Всё из пакета «Видно»",
+        "Сайт с ценами, кейсами и отзывами",
+        "Кнопки мессенджеров и квиз",
+        "Быстрая загрузка на телефоне",
+        "Яндекс Метрика и цели",
+        "Правки сайта и обновление цен",
+        "Отчёт по заявкам с сайта"
+      ]
+    },
+    {
+      "name": "Звонят", "monthly": "40 000", "setup": "150 000",
+      "features": [
+        "Всё из пакета «Выбирают»",
+        "Контент на все площадки",
+        "Клипы и объявления",
+        "SEO-страницы «услуга + район»",
+        "Агент отвечает на заявки за минуту",
+        "Квалификация заявок",
+        "Воронка в CRM",
+        "Отчёт: сколько стоит заявка",
+        "Передача в отдел продаж"
+      ]
+    }
+  ],
+  "offer": {
+    "title": "Обсудим за 15 минут?",
+    "text": "Покажу, что именно изменится в ваших карточках и сколько времени это займёт. Начать можно с недорогой пробы.",
+    "starter": "Экспресс-старт за 4 900 ₽: ответим на все отзывы и загрузим 20 фото за 3 дня.",
+    "ctaLabel": "Обсудить за 15 минут",
+    "ctaUrl": "https://t.me/username"
+  }
+}
+</script>
+
+<script>
+(function () {
+  var d = JSON.parse(document.getElementById('audit-data').textContent);
+  var esc = function (s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+  };
+  var url = function (u) { return /^(https?:|mailto:|tel:)/i.test(u || '') ? esc(u) : '#'; };
+  var tone = function (pct) { return pct >= 70 ? 'var(--ok)' : pct >= 45 ? 'var(--warn)' : 'var(--bad)'; };
+  var mark = { ok: '✓', warn: '!', bad: '✕' };
+  var check = function (col) {
+    return '<svg viewBox="0 0 24 24" fill="none" stroke="' + col + '" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>';
+  };
+
+  document.title = 'Аудит: ' + d.meta.company;
+
+  /* Объёмное кольцо оценки: стеклянная дорожка и переливающаяся дуга */
+  function ring(total) {
+    var r = 128, c = 2 * Math.PI * r, dash = (c * Math.max(0, Math.min(100, total)) / 100).toFixed(1) + ' ' + c.toFixed(1);
+    var arc = function (rad, w, stroke, op) {
+      return '<circle cx="180" cy="180" r="' + rad + '" fill="none" stroke="' + stroke + '" stroke-opacity="' + (op || 1) +
+        '" stroke-width="' + w + '" stroke-linecap="round" stroke-dasharray="' + (2 * Math.PI * rad * total / 100).toFixed(1) + ' ' + (2 * Math.PI * rad).toFixed(1) +
+        '" transform="rotate(-90 180 180)"/>';
+    };
+    return '<svg viewBox="0 0 360 360" aria-hidden="true"><defs>' +
+      '<linearGradient id="gi" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#1a2bc0"/><stop offset=".38" stop-color="#4c6bff"/><stop offset=".62" stop-color="#2cd4f0"/><stop offset=".82" stop-color="#c67bff"/><stop offset="1" stop-color="#2236c8"/></linearGradient>' +
+      '<filter id="sh" x="-25%" y="-25%" width="150%" height="150%"><feDropShadow dx="0" dy="20" stdDeviation="16" flood-color="#0a1060" flood-opacity=".38"/></filter></defs>' +
+      '<g filter="url(#sh)"><circle cx="180" cy="180" r="' + r + '" fill="none" stroke="#fff" stroke-opacity=".5" stroke-width="52"/>' +
+      arc(r, 52, 'url(#gi)') + arc(148, 5, '#fff', .55) + arc(106, 5, '#0a1060', .3) + '</g>' +
+      '<circle cx="180" cy="180" r="92" fill="#fff" fill-opacity=".92"/></svg>';
+  }
+  var mini = '<svg viewBox="0 0 120 120" aria-hidden="true"><defs><linearGradient id="gm" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#1a2bc0"/><stop offset=".5" stop-color="#4c6bff"/><stop offset=".75" stop-color="#2cd4f0"/><stop offset="1" stop-color="#c67bff"/></linearGradient></defs>' +
+    '<circle cx="60" cy="60" r="38" fill="none" stroke="url(#gm)" stroke-width="26"/><circle cx="60" cy="60" r="50" fill="none" stroke="#fff" stroke-opacity=".5" stroke-width="3" stroke-dasharray="120 200" transform="rotate(-60 60 60)"/></svg>';
+  var star = function (id) {
+    return '<svg viewBox="0 0 200 200" aria-hidden="true"><defs><linearGradient id="' + id + '" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#1a2bc0"/><stop offset=".45" stop-color="#4c6bff"/><stop offset=".7" stop-color="#2cd4f0"/><stop offset=".88" stop-color="#e3b8ff"/><stop offset="1" stop-color="#3550d6"/></linearGradient></defs>' +
+      '<path d="M100 4C108 64 136 92 196 100C136 108 108 136 100 196C92 136 64 108 4 100C64 92 92 64 100 4Z" fill="url(#' + id + ')"/>' +
+      '<path d="M100 22C106 70 130 94 178 100C130 106 106 130 100 178C94 130 70 106 22 100C70 94 94 70 100 22Z" fill="#fff" fill-opacity=".14"/></svg>';
+  };
+  var torus = function (id) {
+    return '<svg viewBox="0 0 200 200" aria-hidden="true"><defs><linearGradient id="' + id + '" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#2236c8"/><stop offset=".4" stop-color="#4c6bff"/><stop offset=".65" stop-color="#7be8ff"/><stop offset=".85" stop-color="#c67bff"/><stop offset="1" stop-color="#2236c8"/></linearGradient></defs>' +
+      '<g transform="rotate(-25 100 100)"><ellipse cx="100" cy="100" rx="78" ry="54" fill="none" stroke="url(#' + id + ')" stroke-width="34"/>' +
+      '<ellipse cx="100" cy="100" rx="92" ry="66" fill="none" stroke="#fff" stroke-opacity=".5" stroke-width="3" stroke-dasharray="150 400"/></g></svg>';
+  };
+
+  var a = d.meta.author, total = d.score.total, h = '';
+
+  h += '<header class="hero"><div class="top"><div class="wrap"><div class="brand">IN<b>+</b>PACK</div>' +
+    '<span class="tag">Аудит от ' + esc(d.meta.date) + '</span></div></div><div class="wrap">' +
+    '<div class="hero-copy"><span class="tag">Аудит присутствия · ' + esc(d.meta.segment) + ' · ' + esc(d.meta.city) + '</span>' +
+    '<h1>' + esc(d.meta.company) + '</h1><p class="lead">' + esc(d.meta.intro) + '</p>' +
+    '<div class="bench"><span class="tag">Ваша оценка: <b>&nbsp;' + total + '</b></span>' +
+    '<span class="tag">Конкуренты рядом: <b>&nbsp;' + d.score.competitorsMin + '–' + d.score.competitorsMax + '</b></span></div>' +
+    '<div class="btns"><a class="btn" data-goal="cta_click" href="#offer">Что мы предлагаем</a><a class="link" href="#problems">Смотреть разбор</a></div></div>' +
+    '<div class="obj">' + ring(total) + '<div class="num"><b>' + total + '</b><span>из 100</span></div>' +
+    '<div class="float" style="width:26%;left:-6%;top:2%">' + mini + '</div></div></div></header>';
+
+  h += '<section class="block" id="problems"><div class="wrap"><div class="head"><span class="tag">Что мы нашли</span><h2>Три главные проблемы</h2>' +
+    '<p>То, что сильнее всего влияет на выбор клиента.</p></div><div class="problems">';
+  d.problems.forEach(function (p, i) {
+    h += '<div class="card problem"><div class="n">' + (i + 1) + '</div><h3>' + esc(p.title) + '</h3><p>' + esc(p.detail) + '</p>' +
+      (p.impact ? '<div class="impact">' + esc(p.impact) + '</div>' : '') + '</div>';
+  });
+  h += '</div></div></section>';
+
+  h += '<section class="block"><div class="wrap"><div class="head"><span class="tag">Разбор</span><h2>Как вас видят на каждой площадке</h2></div><div class="blocks">';
+  d.blocks.forEach(function (b) {
+    var pct = Math.round(100 * b.score / b.max);
+    h += '<div class="card"><div class="bh"><h3>' + esc(b.name) + '</h3><b>' + b.score + ' / ' + b.max + '</b></div>' +
+      '<div class="bar"><i style="width:' + pct + '%;background:' + tone(pct) + '"></i></div><ul class="items">';
+    b.items.forEach(function (it) {
+      var s = mark[it.status] ? it.status : 'warn';
+      h += '<li><span class="dot ' + s + '">' + mark[s] + '</span><span>' + esc(it.label) + (it.note ? '<small>' + esc(it.note) + '</small>' : '') + '</span></li>';
+    });
+    h += '</ul></div>';
+  });
+  h += '</div></div></section>';
+
+  h += '<section class="block"><div class="wrap"><div class="head"><span class="tag">Сравнение</span><h2>Вы и соседи по району</h2></div>' +
+    '<div class="card table-scroll" style="padding:8px"><table><thead><tr><th>Компания</th><th>Рейтинг</th><th>Отзывы</th><th>Без ответа</th><th>Фото</th><th>Цены</th></tr></thead><tbody>';
+  d.competitors.forEach(function (k) {
+    h += '<tr' + (k.me ? ' class="me"' : '') + '><td>' + esc(k.name) + '</td><td class="n">' + esc(k.rating) + '</td><td class="n">' + esc(k.reviews) +
+      '</td><td class="n">' + esc(k.unanswered) + '</td><td class="n">' + esc(k.photos) + '</td><td>' + esc(k.prices) + '</td></tr>';
+  });
+  h += '</tbody></table></div></div></section>';
+
+  h += '<section class="block"><div class="wrap"><div class="head"><span class="tag">Быстрые победы</span><h2>Что можно исправить за пару недель</h2></div><div class="wins">';
+  d.quickWins.forEach(function (w) {
+    h += '<div class="card win"><span class="days">' + esc(w.days) + '</span><h3>' + esc(w.title) + '</h3><p>' + esc(w.detail) + '</p></div>';
+  });
+  h += '</div></div></section>';
+
+  if (d.packages && d.packages.length) {
+    h += '<section class="block" id="offer"><div class="wrap"><div class="head"><span class="tag">Как мы можем помочь</span><h2>Выберите, с чего начать</h2>' +
+      '<p>Три пакета, каждый следующий включает предыдущий.</p></div><div class="plans">';
+    d.packages.forEach(function (p) {
+      var hot = !!p.popular, col = hot ? '#fff' : '#0b1038';
+      h += '<div class="plan' + (hot ? ' hot' : '') + '"><div><div class="row"><span class="name">' + esc(p.name) + '</span>' +
+        (hot ? '<span class="rainbow">Популярный</span>' : '') + '</div>' +
+        '<div class="price" style="margin-top:28px"><b>от ' + esc(p.monthly) + ' ₽</b><span>/ в месяц</span></div>' +
+        '<div class="setup">Запуск от ' + esc(p.setup) + ' ₽</div></div>' +
+        '<a class="btn block' + (hot ? ' white' : '') + '" data-goal="cta_click" href="' + url(d.offer.ctaUrl) + '" target="_blank" rel="noopener">Обсудить пакет</a><ul>';
+      p.features.forEach(function (f) { h += '<li>' + check(col) + '<span>' + esc(f) + '</span></li>'; });
+      h += '</ul></div>';
+    });
+    h += '</div>' + (d.offer.starter ? '<p class="starter"><b>Не готовы сразу?</b> ' + esc(d.offer.starter) + '</p>' : '') + '</div></section>';
+  }
+
+  h += '<section class="cta"><div class="float s1" style="animation-duration:9s">' + star('gs') + '</div><div class="float s2" style="animation-duration:8s;animation-delay:-3s">' + torus('gt') + '</div>' +
+    '<div class="wrap"><h2>' + esc(d.offer.title) + '</h2><p class="copy">' + esc(d.offer.text) + '</p>' +
+    '<div class="btns"><a class="btn" data-goal="cta_click" href="' + url(d.offer.ctaUrl) + '" target="_blank" rel="noopener">' + esc(d.offer.ctaLabel) + '</a>' +
+    (a.phone ? '<a class="link" data-goal="cta_click" href="tel:' + esc(a.phone.replace(/[^+\d]/g, '')) + '">' + esc(a.phone) + '</a>' : '') + '</div>' +
+    '<div class="who">' + (a.photo ? '<img src="' + url(a.photo) + '" alt="">' : '') + '<div><b>' + esc(a.name) + '</b><br>' + esc(a.role) + '</div></div></div></section>';
+
+  h += '<footer><div class="wrap"><span>Данные из открытых источников на ' + esc(d.meta.date) + '. Цены в пакетах ориентировочные.</span><span>IN+PACK</span></div></footer>';
+
+  document.getElementById('app').innerHTML = h;
+
+  // Цели Метрики: подставить номер счётчика вместо 0
+  var COUNTER = 0;
+  var goal = function (g) { if (COUNTER && window.ym) window.ym(COUNTER, 'reachGoal', g); };
+  document.addEventListener('click', function (e) {
+    var el = e.target.closest('[data-goal]');
+    if (el) goal(el.getAttribute('data-goal'));
+  });
+  var sent = false;
+  window.addEventListener('scroll', function () {
+    if (!sent && window.innerHeight + window.scrollY >= document.body.scrollHeight - 200) { sent = true; goal('scroll_end'); }
+  }, { passive: true });
+})();
+</script>
+</body>
+</html>
